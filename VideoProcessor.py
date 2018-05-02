@@ -6,8 +6,7 @@ from config import *
 
 
 class VideoProcessor:
-
-    def __init__(self, video_path="peopleCounter.avi"):
+    def __init__(self, video_path="assets/sample_1.avi"):
         """
         Subtracting background from the video frames and find contours on the original frame
         which could be a person in the queue.
@@ -15,7 +14,8 @@ class VideoProcessor:
         """
         self.stream = cv2.VideoCapture(video_path)
         self.video_time = parse_datetime(video_path)
-        self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(history = 1000)
+        self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(
+            history=1000)
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
 
@@ -33,8 +33,8 @@ class VideoProcessor:
         :ndarray: frame_with_persons: frame with only suspected boxes to have person in
         """
         mask = np.zeros(frame.shape[:2], dtype="uint8")
-        for x,y,w,h in boxes:
-            mask[y:y+h, x:x+w] = 1
+        for x, y, w, h in boxes:
+            mask[y:y + h, x:x + w] = 1
 
         frame_with_persons = cv2.bitwise_and(frame, frame, mask=mask)
         return frame_with_persons
@@ -46,25 +46,50 @@ class VideoProcessor:
         :boolean preview:
         :ndarray: processed_frame: frame with only possible persons in the queue
         """
-        if crop:
-            frame = self.crop_interesting_region(frame)
-
         original_frame = frame.copy()
+        # splitting image into different color channels and applying
+        # Histogram equalization
 
+        # frame = self.crop_interesting_region(frame)
+        # chanels = cv2.split(frame)
+        # eq_chanels = []
+        # for ch, color in zip(chanels, ["B", "G", "R"]):
+        #     eq_chanels.append(cv2.equalizeHist(ch))
+        # eq_image = cv2.merge(eq_chanels)
+        # frame = cv2.cvtColor(eq_image, cv2.COLOR_BGR2RGB)
+
+        # frame = self.crop_interesting_region(frame)
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # frame = cv2.equalizeHist(gray)
+        # frame = cv2.GaussianBlur(frame, (5, 5), 0)
+        # frame = cv2.fastNlMeansDenoising(frame)
+
+        # frame = self.crop_interesting_region(frame)
+        yuv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+        yuv_frame = cv2.GaussianBlur(yuv_frame, (5, 5), 0)
+        yuv_frame[:,:,0] = cv2.equalizeHist(yuv_frame[:,:,0])
+        frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR)
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
+        frame = cv2.fastNlMeansDenoisingColored(frame)
+
+        eq_image = frame.copy()
         fg_mask = self.background_subtractor.apply(frame)
         blur = cv2.medianBlur(fg_mask, 5)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        closing = cv2.morphologyEx(blur, cv2.MORPH_CLOSE, kernel)  # fill any small holes
-        opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)  # remove noise
+        closing = cv2.morphologyEx(blur, cv2.MORPH_CLOSE,
+                                   kernel)  # fill any small holes
+        opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN,
+                                   kernel)  # remove noise
 
         # dilate the thresholded image to fill in holes, then find contours
         # on thresholded image
-        im2, contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        im2, contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE,
+                                                    cv2.CHAIN_APPROX_SIMPLE)
 
         good_boxes = []
         # loop over the contours
         for c in contours:
-            if cv2.contourArea(c) > self.min_area and cv2.contourArea(c) < self.max_area:
+            if self.min_area < cv2.contourArea(c) < self.max_area:
                 (x, y, w, h) = cv2.boundingRect(c)
                 good_boxes.append((x, y, w, h))
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -72,7 +97,8 @@ class VideoProcessor:
         processed_frame = self.leave_only_persons(original_frame, good_boxes)
 
         if preview:
-            cv2.imshow("Frame with boxes", frame)
+            cv2.imshow("Original", original_frame)
+            cv2.imshow("Equalized", eq_image)
             cv2.imshow('Foreground', opening)
             cv2.imshow('Only persons', processed_frame)
 
