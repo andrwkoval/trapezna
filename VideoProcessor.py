@@ -87,7 +87,7 @@ class VideoProcessor:
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
         good_boxes = []
-        # loop over the contours
+        # loop over the contouasdrs
         for c in contours:
             if self.min_area < cv2.contourArea(c) < self.max_area:
                 (x, y, w, h) = cv2.boundingRect(c)
