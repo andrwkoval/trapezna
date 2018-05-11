@@ -48,7 +48,7 @@ class VideoProcessor:
         :ndarray: processed_frame: frame with only possible persons in the queue
         """
         original_frame = frame.copy()
-        frame = imutils.resize(frame, width=500)
+        # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
@@ -57,6 +57,7 @@ class VideoProcessor:
 
         delta = cv2.absdiff(prev, gray)
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
+        cpp = thresh.copy()
         thresh = cv2.dilate(thresh, None, iterations=2)
 
         # frame = cv2.fastNlMeansDenoisingColored(frame)
@@ -87,7 +88,7 @@ class VideoProcessor:
         if preview:
             cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
-            cv2.imshow()
+            cv2.imshow("Dilated", cpp)
             cv2.waitKey()
 
         return prev

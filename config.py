@@ -1,6 +1,6 @@
 # VideoProccessor
 max_contour_area_to_be_a_person =  5000
-min_contour_area_to_be_a_person =  500
+min_contour_area_to_be_a_person =  100
 
 
 interesting_region_x_1 = 0
