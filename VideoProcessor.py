@@ -53,7 +53,7 @@ class VideoProcessor:
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
         if prev is None:
-            prev = frame
+            prev = gray
 
         delta = cv2.absdiff(prev, gray)
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
@@ -87,10 +87,10 @@ class VideoProcessor:
         if preview:
             cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
-
+            cv2.imshow()
             cv2.waitKey()
 
-        return original_frame
+        return prev
 
     def get_next_frame(self):
         grabbed, frame = self.stream.read()
