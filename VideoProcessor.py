@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import imutils
 
 from utils import parse_datetime
 from config import *
@@ -48,17 +49,21 @@ class VideoProcessor:
         :boolean preview:
         :ndarray: processed_frame: frame with only possible persons in the queue
         """
+        if crop:
+            frame = self.crop_interesting_region(frame)
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
-        # gray = cv2.equalizeHist(gray)
+        # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        # gray = clahe.apply(gray)
 
         if prev is None:
             self.prev = gray
             self.initialize(gray)
+            self.f_frame = original_frame
 
-        self.compare_with_prev(gray)
+        self.thresh = thresh = self.compare_with_prev(gray)
         im2, contours, hierarchy = cv2.findContours(self.thresh, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
@@ -75,6 +80,9 @@ class VideoProcessor:
         if preview:
             cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
+            cv2.imshow("gray", gray)
+            cv2.imshow("thresh", thresh)
+
             # cv2.imshow("Dilated", cpp)
             # cv2.imshow("a", a)
             cv2.waitKey()
@@ -83,9 +91,9 @@ class VideoProcessor:
         delta = cv2.absdiff(self.prev, frame)
         self.prev = frame
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-        self.thresh_f_accum = cv2.threshold(delta, 2, 10, cv2.THRESH_BINARY)[1]
+        self.thresh_f_accum = cv2.threshold(delta, 2, 2, cv2.THRESH_BINARY)[1]
         self.accum_img = cv2.add(self.accum_img, self.thresh_f_accum)
-        self.thresh = cv2.dilate(thresh, None, iterations=2)
+        return cv2.dilate(thresh, None, iterations=2)
 
     def get_next_frame(self):
         grabbed, frame = self.stream.read()
@@ -98,10 +106,8 @@ class VideoProcessor:
 
     def show_video(self):
         grabbed, frame = self.get_next_frame()
-        self.f_frame = frame.copy()
-        self.prev = None
         while grabbed:
-            self.process_frame(frame, self.prev, preview=True)
+            self.process_frame(frame, self.prev, preview=True, crop=False)
             grabbed, frame = self.get_next_frame()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
