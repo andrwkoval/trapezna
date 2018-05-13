@@ -7,7 +7,7 @@ from config import *
 
 
 class VideoProcessor:
-    def __init__(self, video_path="assets/sample_1.avi"):
+    def __init__(self, video_path="assets/peopleCounter.avi"):
         """
         Subtracting background from the video frames and find contours on the original frame
         which could be a person in the queue.
@@ -15,8 +15,8 @@ class VideoProcessor:
         """
         self.stream = cv2.VideoCapture(video_path)
         self.video_time = parse_datetime(video_path)
-        self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(
-            history=1000)
+        # self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(
+        #     history=1000)
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
 
@@ -47,32 +47,24 @@ class VideoProcessor:
         :boolean preview:
         :ndarray: processed_frame: frame with only possible persons in the queue
         """
+        global accum_image
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        # gray = cv2.equalizeHist(gray)
 
         if prev is None:
             prev = gray
+            height, width = gray.shape[:2]
+            accum_image = np.zeros((height, width), np.uint8)
 
         delta = cv2.absdiff(prev, gray)
+        a = delta.copy()
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
         cpp = thresh.copy()
         thresh = cv2.dilate(thresh, None, iterations=2)
-
-        # frame = cv2.fastNlMeansDenoisingColored(frame)
-        #
-        # eq_image = frame.copy()
-        # fg_mask = self.background_subtractor.apply(frame)
-        # blur = cv2.medianBlur(fg_mask, 5)
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        # closing = cv2.morphologyEx(blur, cv2.MORPH_CLOSE,
-        #                            kernel)  # fill any small holes
-        # opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN,
-        #                            kernel)  # remove noise
-
-        # dilate the thresholded image to fill in holes, then find contours
-        # on thresholded image
+        accum_image = cv2.add(accum_image, thresh)
         im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
@@ -89,9 +81,9 @@ class VideoProcessor:
             cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
             cv2.imshow("Dilated", cpp)
+            cv2.imshow("a", a)
             cv2.waitKey()
-
-        return prev
+        return prev, accum_image
 
     def get_next_frame(self):
         grabbed, frame = self.stream.read()
@@ -99,11 +91,16 @@ class VideoProcessor:
 
     def show_video(self):
         grabbed, frame = self.get_next_frame()
+        first_frame = frame.copy()
         prev = None
         while grabbed:
-            prev = self.process_frame(frame, prev, preview=True)
+            prev, accum = self.process_frame(frame, prev, preview=True)
             grabbed, frame = self.get_next_frame()
-
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        color_image = cv2.applyColorMap(accum, cv2.COLORMAP_HOT)
+        result_overlay = cv2.addWeighted(first_frame, 0.7, color_image, 0.7, 0)
+        cv2.imwrite("overlay.jpg", result_overlay)
 
 if __name__ == "__main__":
     vidya = VideoProcessor()
