@@ -20,6 +20,7 @@ class VideoProcessor:
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
 
+
     @staticmethod
     def crop_interesting_region(frame):
         return frame[interesting_region_y_1:interesting_region_y_2,
@@ -47,7 +48,6 @@ class VideoProcessor:
         :boolean preview:
         :ndarray: processed_frame: frame with only possible persons in the queue
         """
-        global accum_image
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -56,15 +56,14 @@ class VideoProcessor:
 
         if prev is None:
             prev = gray
-            height, width = gray.shape[:2]
-            accum_image = np.zeros((height, width), np.uint8)
+            self.initialize(gray)
 
         delta = cv2.absdiff(prev, gray)
         a = delta.copy()
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
         cpp = thresh.copy()
         thresh = cv2.dilate(thresh, None, iterations=2)
-        accum_image = cv2.add(accum_image, thresh)
+        accum_image = cv2.add(self.accum_img, thresh)
         im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
@@ -89,6 +88,12 @@ class VideoProcessor:
         grabbed, frame = self.stream.read()
         return grabbed, frame
 
+    def initialize(self, frame):
+        self.f_frame = frame.copy()
+        height, width = self.f_frame.shape[:2]
+        self.accum_img = np.zeros((height, width), np.uint8)
+
+
     def show_video(self):
         grabbed, frame = self.get_next_frame()
         first_frame = frame.copy()
@@ -98,7 +103,8 @@ class VideoProcessor:
             grabbed, frame = self.get_next_frame()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        color_image = cv2.applyColorMap(accum, cv2.COLORMAP_HOT)
+
+        color_image = cv2.applyColorMap(accum, cv2.COLORMAP_PINK)
         result_overlay = cv2.addWeighted(first_frame, 0.7, color_image, 0.7, 0)
         cv2.imwrite("overlay.jpg", result_overlay)
 
