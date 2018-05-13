@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import imutils
 
 from utils import parse_datetime
 from config import *
@@ -19,6 +18,7 @@ class VideoProcessor:
         #     history=1000)
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
+        self.prev = None
 
 
     @staticmethod
@@ -55,16 +55,11 @@ class VideoProcessor:
         # gray = cv2.equalizeHist(gray)
 
         if prev is None:
-            prev = gray
+            self.prev = gray
             self.initialize(gray)
 
-        delta = cv2.absdiff(prev, gray)
-        a = delta.copy()
-        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-        cpp = thresh.copy()
-        thresh = cv2.dilate(thresh, None, iterations=2)
-        accum_image = cv2.add(self.accum_img, thresh)
-        im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
+        self.compare_with_prev(gray)
+        im2, contours, hierarchy = cv2.findContours(self.thresh, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
         good_boxes = []
@@ -76,36 +71,46 @@ class VideoProcessor:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         processed_frame = self.leave_only_persons(original_frame, good_boxes)
+
         if preview:
             cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
-            cv2.imshow("Dilated", cpp)
-            cv2.imshow("a", a)
+            # cv2.imshow("Dilated", cpp)
+            # cv2.imshow("a", a)
             cv2.waitKey()
-        return prev, accum_image
+
+    def compare_with_prev(self, frame):
+        delta = cv2.absdiff(self.prev, frame)
+        self.prev = frame
+        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
+        self.thresh_f_accum = cv2.threshold(delta, 2, 10, cv2.THRESH_BINARY)[1]
+        self.accum_img = cv2.add(self.accum_img, self.thresh_f_accum)
+        self.thresh = cv2.dilate(thresh, None, iterations=2)
 
     def get_next_frame(self):
         grabbed, frame = self.stream.read()
         return grabbed, frame
 
     def initialize(self, frame):
-        self.f_frame = frame.copy()
-        height, width = self.f_frame.shape[:2]
+        self.init_frame = frame.copy()
+        height, width = self.init_frame.shape[:2]
         self.accum_img = np.zeros((height, width), np.uint8)
-
 
     def show_video(self):
         grabbed, frame = self.get_next_frame()
-        first_frame = frame.copy()
-        prev = None
+        self.f_frame = frame.copy()
+        self.prev = None
         while grabbed:
-            prev, accum = self.process_frame(frame, prev, preview=True)
+            self.process_frame(frame, self.prev, preview=True)
             grabbed, frame = self.get_next_frame()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        color_image = cv2.applyColorMap(accum, cv2.COLORMAP_PINK)
-        result_overlay = cv2.addWeighted(first_frame, 0.7, color_image, 0.7, 0)
+        cv2.imwrite('accum_img.jpg', self.accum_img)
+        color_image = cv2.applyColorMap(self.accum_img, cv2.COLORMAP_HOT)
+        cv2.imwrite("color_img.jpg", color_image)
+        cv2.imwrite("first_frame.jpg", self.f_frame)
+        result_overlay = cv2.addWeighted(self.f_frame, 0.7, color_image, 0.7, 0)
         cv2.imwrite("overlay.jpg", result_overlay)
 
 if __name__ == "__main__":
