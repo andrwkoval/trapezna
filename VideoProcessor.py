@@ -7,7 +7,7 @@ from config import *
 
 
 class VideoProcessor:
-    def __init__(self, video_path="assets/sample_1.avi"):
+    def __init__(self, video_path="assets/peopleCounter.avi"):
         """
         Subtracting background from the video frames and find contours on the original frame
         which could be a person in the queue.
@@ -41,7 +41,7 @@ class VideoProcessor:
         frame_with_persons = cv2.bitwise_and(frame, frame, mask=mask)
         return frame_with_persons
 
-    def process_frame(self, frame, prev, preview=False, crop=False):
+    def process_frame(self, frame, preview=False, crop=False):
         """
         Subtract background from the video. Leaves only contours which can be a person
         :ndarray frame: frame of the video
@@ -53,15 +53,11 @@ class VideoProcessor:
 
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.medianBlur(gray, 5)
-        gray = self.adjust_gamma(gray, 2.5)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        gray = clahe.apply(gray)
+        gray = self.prepare_frame(frame)
 
-        if prev is None:
+        if self.prev is None:
             self.prev = gray
-            self.initialize(gray)
+            self.init_frame = gray.copy
             self.f_frame = original_frame
 
         self.thresh = thresh = self.compare_with_prev(gray)
@@ -89,12 +85,35 @@ class VideoProcessor:
             # cv2.imshow("a", a)
             cv2.waitKey()
 
+    def make_heatmap(self, frame):
+        if self.prev is None:
+            gray = self.prepare_frame(frame)
+            self.prev = gray
+            self.res = (0.05 * gray).astype(np.float64)
+            self.compare_with_prev(gray)
+        else:
+            gray = self.prepare_frame(frame)
+            processed = self.compare_with_prev(gray)
+            processed = processed.astype(np.float64)
+            self.res += (40 * processed + gray) * 0.01
+            show_res = self.res / self.res.max()
+            show_res = np.floor(show_res * 255)
+            show_res = show_res.astype(np.uint8)
+            show_res = cv2.applyColorMap(show_res, cv2.COLORMAP_JET)
+            cv2.imshow("res", show_res)
+
+
+    def prepare_frame(self, frame):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.medianBlur(gray, 5)
+        gray = self.adjust_gamma(gray, 2.5)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        return  clahe.apply(gray)
+
     def compare_with_prev(self, frame):
         delta = cv2.absdiff(self.prev, frame)
         self.prev = frame
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-        self.thresh_f_accum = cv2.threshold(delta, 2, 2, cv2.THRESH_BINARY)[1]
-        self.accum_img = cv2.add(self.accum_img, self.thresh_f_accum)
         return cv2.dilate(thresh, None, iterations=2)
 
     def get_next_frame(self):
@@ -103,13 +122,12 @@ class VideoProcessor:
 
     def initialize(self, frame):
         self.init_frame = frame.copy()
-        height, width = self.init_frame.shape[:2]
-        self.accum_img = np.zeros((height, width), np.uint8)
 
     def show_video(self):
         grabbed, frame = self.get_next_frame()
         while grabbed:
-            self.process_frame(frame, self.prev, preview=True, crop=False)
+            self.make_heatmap(frame)
+            # self.process_frame(frame, preview=True, crop=False)
             grabbed, frame = self.get_next_frame()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
