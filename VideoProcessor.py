@@ -50,6 +50,7 @@ class VideoProcessor:
         """
         if crop:
             frame = self.crop_interesting_region(frame)
+
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -112,14 +113,6 @@ class VideoProcessor:
             grabbed, frame = self.get_next_frame()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
-        cv2.imwrite('accum_img.jpg', self.accum_img)
-        color_image = cv2.applyColorMap(self.accum_img, cv2.COLORMAP_HOT)
-        cv2.imwrite("color_img.jpg", color_image)
-        cv2.imwrite("first_frame.jpg", self.f_frame)
-        result_overlay = cv2.addWeighted(self.f_frame, 0.7, color_image, 0.7,
-                                         0)
-        cv2.imwrite("overlay.jpg", result_overlay)
 
     def adjust_gamma(self, img, gamma=1.5):
         invGamma = 1.0 / gamma
