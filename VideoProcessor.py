@@ -15,8 +15,7 @@ class VideoProcessor:
         """
         self.stream = cv2.VideoCapture(video_path)
         self.video_time = parse_datetime(video_path)
-        # self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(
-        #     history=1000)
+        # self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(history=1000)
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
         self.prev = None
