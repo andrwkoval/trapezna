@@ -9,7 +9,8 @@ from config import *
 class VideoProcessor:
     def __init__(self, video_path="assets/sample_1.avi"):
         """
-        Subtracting background from the video frames and find contours on the original frame
+        Subtracting background from the video frames and
+        find contours on the original frame
         which could be a person in the queue.
         :string video_path: path to the video to process
         """
