@@ -7,7 +7,7 @@ from config import *
 
 
 class VideoProcessor:
-    def __init__(self, video_path="assets/peopleCounter.avi"):
+    def __init__(self, video_path="assets/sample_1.avi"):
         """
         Subtracting background from the video frames and find contours on the original frame
         which could be a person in the queue.
@@ -20,7 +20,6 @@ class VideoProcessor:
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
         self.prev = None
-
 
     @staticmethod
     def crop_interesting_region(frame):
@@ -54,9 +53,10 @@ class VideoProcessor:
         original_frame = frame.copy()
         # frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (21, 21), 0)
-        # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        # gray = clahe.apply(gray)
+        gray = cv2.medianBlur(gray, 5)
+        gray = self.adjust_gamma(gray, 2.5)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
 
         if prev is None:
             self.prev = gray
@@ -64,7 +64,8 @@ class VideoProcessor:
             self.f_frame = original_frame
 
         self.thresh = thresh = self.compare_with_prev(gray)
-        im2, contours, hierarchy = cv2.findContours(self.thresh, cv2.RETR_EXTERNAL,
+        im2, contours, hierarchy = cv2.findContours(self.thresh,
+                                                    cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE)
 
         good_boxes = []
@@ -116,8 +117,16 @@ class VideoProcessor:
         color_image = cv2.applyColorMap(self.accum_img, cv2.COLORMAP_HOT)
         cv2.imwrite("color_img.jpg", color_image)
         cv2.imwrite("first_frame.jpg", self.f_frame)
-        result_overlay = cv2.addWeighted(self.f_frame, 0.7, color_image, 0.7, 0)
+        result_overlay = cv2.addWeighted(self.f_frame, 0.7, color_image, 0.7,
+                                         0)
         cv2.imwrite("overlay.jpg", result_overlay)
+
+    def adjust_gamma(self, img, gamma=1.5):
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                          for i in np.arange(0, 256)]).astype("uint8")
+        return cv2.LUT(img, table)
+
 
 if __name__ == "__main__":
     vidya = VideoProcessor()
