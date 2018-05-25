@@ -1,13 +1,12 @@
 import cv2
 import numpy as np
-import imutils
 
 from utils import parse_datetime
 from config import *
 
 
 class VideoProcessor:
-    def __init__(self, video_path="assets/peopleCounter.avi"):
+    def __init__(self, video_path="assets/sample_2.avi"):
         """
         Subtracting background from the video frames and find contours on the original frame
         which could be a person in the queue.
@@ -24,7 +23,7 @@ class VideoProcessor:
     @staticmethod
     def crop_interesting_region(frame):
         return frame[interesting_region_y_1:interesting_region_y_2,
-               interesting_region_x_1:interesting_region_x_2]
+                     interesting_region_x_1:interesting_region_x_2]
 
     @staticmethod
     def leave_only_persons(frame, boxes):
@@ -71,9 +70,11 @@ class VideoProcessor:
             if self.min_area < cv2.contourArea(c) < self.max_area:
                 (x, y, w, h) = cv2.boundingRect(c)
                 good_boxes.append((x, y, w, h))
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.rectangle(
+                    frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        processed_frame = self.leave_only_persons(original_frame, good_boxes)
+        processed_frame = self.leave_only_persons(
+            original_frame, good_boxes)
 
         if preview:
             cv2.imshow("Original", original_frame)
@@ -102,19 +103,22 @@ class VideoProcessor:
             show_res = cv2.applyColorMap(show_res, cv2.COLORMAP_JET)
             cv2.imshow("res", show_res)
 
-
     def prepare_frame(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.medianBlur(gray, 5)
-        gray = self.adjust_gamma(gray, 2.5)
+        gray = cv2.bilateralFilter(gray, 9, 75, 75)
+        gray = self.adjust_gamma(gray, 1.5)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        return  clahe.apply(gray)
+        return clahe.apply(gray)
 
     def compare_with_prev(self, frame):
         delta = cv2.absdiff(self.prev, frame)
         self.prev = frame
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (5, 5))
         thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-        return cv2.dilate(thresh, None, iterations=2)
+        thresh = cv2.dilate(thresh, None, iterations=2)
+        closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        return closing
 
     def get_next_frame(self):
         grabbed, frame = self.stream.read()
