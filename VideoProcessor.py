@@ -6,7 +6,7 @@ from config import *
 
 
 class VideoProcessor:
-    def __init__(self, video_path="assets/sample_2.avi"):
+    def __init__(self, video_path="assets/14_04_180524_133329_134503_0129905100.avi"):
         """
         Subtracting background from the video frames and
         find contours on the original frame
@@ -23,7 +23,7 @@ class VideoProcessor:
     @staticmethod
     def crop_interesting_region(frame):
         return frame[interesting_region_y_1:interesting_region_y_2,
-                     interesting_region_x_1:interesting_region_x_2]
+               interesting_region_x_1:interesting_region_x_2]
 
     @staticmethod
     def leave_only_persons(frame, boxes):
@@ -125,4 +125,27 @@ class VideoProcessor:
         return grabbed, frame
 
     def initialize(self, frame):
-        self.init_frame = frame.copy() cxzrtQWE5
+        self.init_frame = frame.copy()
+
+    def show_video(self):
+        grabbed, frame = self.get_next_frame()
+
+        while grabbed:
+            self.make_heatmap(frame)
+            # self.process_frame(frame, preview=True, crop=False)
+            grabbed, frame = self.get_next_frame()
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    def adjust_gamma(self, img, gamma=1.5):
+        invGamma = 1.0 / gamma
+
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                          for i in np.arange(0, 256)]).astype("uint8")
+
+        return cv2.LUT(img, table)
+
+
+if __name__ == "__main__":
+    vidya = VideoProcessor()
+    vidya.show_video()
