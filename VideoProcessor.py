@@ -77,7 +77,6 @@ class VideoProcessor:
             original_frame, good_boxes)
 
         if preview:
-            cv2.imshow("Original", original_frame)
             cv2.imshow('Only persons', processed_frame)
             cv2.imshow("gray", gray)
             cv2.imshow("thresh", thresh)
@@ -96,8 +95,8 @@ class VideoProcessor:
             gray = self.prepare_frame(frame)
             processed = self.compare_with_prev(gray)
             processed = processed.astype(np.float64)
-            self.res += (40 * processed + gray) * 0.01
-            show_res = self.res / self.res.max()
+            self.res += (50 * processed + gray) * 0.1
+            show_res = (self.res) / self.res.max()
             show_res = np.floor(show_res * 255)
             show_res = show_res.astype(np.uint8)
             show_res = cv2.applyColorMap(show_res, cv2.COLORMAP_JET)
@@ -105,9 +104,9 @@ class VideoProcessor:
 
     def prepare_frame(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.bilateralFilter(gray, 9, 75, 75)
+        gray = cv2.GaussianBlur(gray, (11, 11), 2, 2)
         gray = self.adjust_gamma(gray, 1.5)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
         return clahe.apply(gray)
 
     def compare_with_prev(self, frame):
@@ -125,4 +124,28 @@ class VideoProcessor:
         return grabbed, frame
 
     def initialize(self, frame):
-        self.init_frame = frame.copy() cxzrtQWE5
+        self.init_frame = frame.copy()
+
+    def show_video(self):
+        grabbed, frame = self.get_next_frame()
+        n = 0
+        while grabbed:
+            # if n % 60 == 0:
+            cv2.imshow("frame", frame)
+            self.make_heatmap(frame)
+            # self.process_frame(frame, preview=True, crop=False)
+            grabbed, frame = self.get_next_frame()
+            # n += 1
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    def adjust_gamma(self, img, gamma=1.5):
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                          for i in np.arange(0, 256)]).astype("uint8")
+        return cv2.LUT(img, table)
+
+
+if __name__ == "__main__":
+    vidya = VideoProcessor()
+    vidya.show_video()
