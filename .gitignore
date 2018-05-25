@@ -5,3 +5,4 @@ testing_images
 data
 data/
 heatmap_example.py
+__pycache__/
