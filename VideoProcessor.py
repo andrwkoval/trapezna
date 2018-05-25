@@ -8,14 +8,15 @@ from config import *
 class VideoProcessor:
     def __init__(self, video_path="assets/sample_2.avi"):
         """
-        Subtracting background from the video frames and find contours on the original frame
+        Subtracting background from the video frames and find contours on the
+        original frame
         which could be a person in the queue.
         :string video_path: path to the video to process
         """
         self.stream = cv2.VideoCapture(video_path)
         self.video_time = parse_datetime(video_path)
-        # self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG(
-        #     history=1000)
+        # self.background_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG
+        # (history=1000)
         self.min_area = min_contour_area_to_be_a_person
         self.max_area = max_contour_area_to_be_a_person
         self.prev = None
@@ -31,7 +32,8 @@ class VideoProcessor:
         Makes all areas without possible people black
         :ndarray frame: original frame from the video
         :list of (x,y,w,h) boxes: boxes suspected to have a person in
-        :ndarray: frame_with_persons: frame with only suspected boxes to have person in
+        :ndarray: frame_with_persons: frame with only suspected boxes to have
+        person in
         """
         mask = np.zeros(frame.shape[:2], dtype="uint8")
         for x, y, w, h in boxes:
@@ -42,10 +44,12 @@ class VideoProcessor:
 
     def process_frame(self, frame, preview=False, crop=False):
         """
-        Subtract background from the video. Leaves only contours which can be a person
+        Subtract background from the video. Leaves only contours which can be a
+        person
         :ndarray frame: frame of the video
         :boolean preview:
-        :ndarray: processed_frame: frame with only possible persons in the queue
+        :ndarray: processed_frame: frame with only possible persons in the
+        queue
         """
         if crop:
             frame = self.crop_interesting_region(frame)
@@ -95,7 +99,7 @@ class VideoProcessor:
             gray = self.prepare_frame(frame)
             processed = self.compare_with_prev(gray)
             processed = processed.astype(np.float64)
-            self.res += (50 * processed + gray) * 0.1
+            self.res += (50 * processed + gray) * 0.01
             show_res = (self.res) / self.res.max()
             show_res = np.floor(show_res * 255)
             show_res = show_res.astype(np.uint8)
