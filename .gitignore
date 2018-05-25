@@ -4,5 +4,9 @@ testing_images
 .idea
 data
 data/
+<<<<<<< HEAD
 heatmap_example.py
+=======
+assets/
+>>>>>>> b4b674412d498a5310bf57ede0893abb68190176
 __pycache__/
