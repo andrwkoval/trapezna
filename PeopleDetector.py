@@ -6,8 +6,10 @@ from imutils.object_detection import non_max_suppression
 
 
 class PeopleDetector:
+    """Represents people recognition."""
 
     def __init__(self, detector_parameters):
+        """Initializes people detector"""
         self.hog = cv2.HOGDescriptor()
         self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
         self.parameters = detector_parameters
