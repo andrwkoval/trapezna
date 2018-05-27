@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from mtcnn.mtcnn import MTCNN
 from utils import parse_datetime
 from config import *
 
