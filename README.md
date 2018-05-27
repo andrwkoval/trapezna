@@ -48,12 +48,11 @@ Push to the branch (git push origin feature/fooBar)
 Create a new Pull Request
 
 ## Contacts:
-Developers:
-    1. Yuriy Yelisjejev
-        * https://github.com/YuraYelisieiev/
-        * yeliseev@ucu.edu.ua
-    2. Andrii Koval
-        * https://github.com/andrwkoval/
-        * andykoval@ucu.edu.ua
+1. Yuriy Yelisjejev
+    * https://github.com/YuraYelisieiev/
+    * yeliseev@ucu.edu.ua
+2. Andrii Koval
+    * https://github.com/andrwkoval/
+    * andykoval@ucu.edu.ua
 
 
