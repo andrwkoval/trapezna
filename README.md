@@ -49,6 +49,7 @@ Live video heatmap.
     * initialize (copies current frame)
     * get_next_frame (gets next frame)
     * show_video (visualizes the heatmap and resets traces every 220 frames)
+6. requirements.txt (python packages required for project usage)
 
 ## Contributing
 - Fork it (https://github.com/andrwkoval/trapezna/fork)
