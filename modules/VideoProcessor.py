@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from utils import parse_datetime
-from config import *
+from modules.utils import parse_datetime
+from modules.config import *
 
 
 class VideoProcessor:

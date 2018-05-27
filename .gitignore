@@ -2,6 +2,8 @@ assets/
 test.py
 testing_images
 server.py
+MANIFEST
+setup.py
 .idea
 data
 data/
