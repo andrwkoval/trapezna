@@ -18,7 +18,7 @@ path_file - path to the video to get Heatmap.
 
 ## Output data
 Live video heatmap.
-![Example of heatmap](assets/screenshot.jpg)
+![Example of heatmap](https://github.com/andrwkoval/trapezna/examples/screenshot.jpg)
 
 ## Project Structure
 1. Assets (screenshots and images of working examples)
