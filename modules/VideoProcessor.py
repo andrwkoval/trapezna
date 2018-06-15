@@ -7,7 +7,7 @@ from modules.config import *
 class VideoProcessor:
     """Represents video and image processing."""
 
-    def __init__(self, video_path="assets/sample_3.avi"):
+    def __init__(self, video_path="assets/sample_1.avi"):
         """
         Subtracting background from the video frames and find contours on the
         original frame which could be a person in the queue.
@@ -171,7 +171,7 @@ class VideoProcessor:
                 break
 
     def adjust_gamma(self, img, gamma=1.5):
-        """Brighents the frame."""
+        """Brightens the frame."""
         invGamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** invGamma) * 255
                           for i in np.arange(0, 256)]).astype("uint8")
