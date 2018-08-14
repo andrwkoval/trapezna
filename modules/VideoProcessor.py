@@ -7,7 +7,7 @@ from modules.config import *
 class VideoProcessor:
     """Represents video and image processing."""
 
-    def __init__(self, video_path="assets/sample_1.avi"):
+    def __init__(self, video_path="assets/sample_3.avi"):
         """
         Subtracting background from the video frames and find contours on the
         original frame which could be a person in the queue.
@@ -103,8 +103,7 @@ class VideoProcessor:
         else:
             gray = self.prepare_frame(frame)
             if reset is not None:
-                self.res = (
-                                   0.05 * gray).astype(
+                self.res = (0.05 * gray).astype(
                     np.float64) + self.prev_show * 3.0
             processed = self.compare_with_prev(gray)
             processed = processed.astype(np.float64)
